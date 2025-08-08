@@ -1,15 +1,23 @@
-import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router";
 import Layout from "./components/layout/Layout";
+import Dashboard from "./pages/Dashboard";
+import Boards from "./pages/Boards";
+import Calendar from "./pages/Calendar";
+import Settings from "./pages/Settings";
+
 
 function App() {
   return (
-    <Layout>
-      <h2 className="text-h3">Main Content Area</h2>
-      <p className="text-body mt-2">
-        Replace this with routes soon. Mobile hamburger should toggle the
-        sidebar; desktop sidebar is pinned.
-      </p>
-    </Layout>
+    <BrowserRouter>
+      <Layout>
+        <Routes>
+          <Route path='/' element={<Dashboard />} />
+          <Route path='/boards' element={<Boards/>} />
+          <Route path='/calendar' element={<Calendar />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </Layout>
+    </BrowserRouter>
   );
 }
 

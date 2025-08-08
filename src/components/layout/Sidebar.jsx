@@ -1,31 +1,39 @@
-import { useState } from "react";
-import { HiOutlineX } from "react-icons/hi";
+import {
+  HiOutlineX,
+  HiOutlineHome,
+  HiOutlineClipboardList,
+  HiOutlineCalendar,
+  HiOutlineCog,
+} from "react-icons/hi";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
-  { key: "dashboard", label: "Dashboard", icon: "🏠" },
-  { key: "boards", label: "Boards", icon: "📋" },
-  { key: "calendar", label: "Calendar", icon: "📅" },
-  { key: "settings", label: "Settings", icon: "⚙️" },
+  { key: "dashboard", label: "Dashboard", icon: HiOutlineHome, path: "/" },
+  { key: "boards", label: "Boards", icon: HiOutlineClipboardList, path: "/boards" },
+  { key: "calendar", label: "Calendar", icon: HiOutlineCalendar, path: "/calendar" },
+  { key: "settings", label: "Settings", icon: HiOutlineCog, path: "/settings" },
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const [activeKey, setActiveKey] = useState("dashboard");
+  const navigate = useNavigate();
+
+  const handleNav = (path) => {
+    navigate(path);
+    onClose?.();
+  };
 
   return (
     <aside
       id="app-sidebar"
       aria-label="Sidebar"
       className={[
-        // Base
         "fixed inset-y-0 left-0 z-[99] w-64 bg-white border-r shadow-sm",
-        // Mobile slide in/out
         "transform transition-transform duration-200 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full",
-        // Desktop: pinned and visible
         "md:translate-x-0 md:static md:flex md:flex-col",
       ].join(" ")}
     >
-      {/* Mobile-only header with close button */}
+      {/* Mobile top bar */}
       <div className="flex items-center justify-between p-3 border-b md:hidden">
         <span className="text-h6 font-semibold text-brand">Menu</span>
         <button
@@ -38,31 +46,37 @@ const Sidebar = ({ isOpen, onClose }) => {
         </button>
       </div>
 
-      {/* Content */}
       <div className="flex flex-col w-full p-4">
-        {/* Desktop brand (hidden on mobile since Header shows brand already) */}
         <h1 className="hidden md:block text-h2 text-brand font-bold mb-6">
           TaskFlow
         </h1>
 
         <nav className="flex flex-col gap-2">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setActiveKey(item.key)}
-              className={[
-                "flex items-center gap-3 p-2 w-full text-left rounded-lg transition",
-                activeKey === item.key
-                  ? "bg-gray-100 text-brand font-semibold"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-brand",
-              ].join(" ")}
-              aria-current={activeKey === item.key ? "page" : undefined}
-            >
-              <span aria-hidden="true">{item.icon}</span>
-              <span className="text-body font-medium">{item.label}</span>
-            </button>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.key}
+                to={item.path}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNav(item.path);
+                }}
+                className={({ isActive }) =>
+                  [
+                    "flex items-center gap-3 p-2 w-full rounded-lg transition",
+                    isActive
+                      ? "bg-gray-100 text-brand font-semibold"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-brand",
+                  ].join(" ")
+                }
+                aria-current={({ isActive }) => (isActive ? "page" : undefined)}
+              >
+                <Icon className="h-5 w-5" aria-hidden="true" />
+                <span className="text-body font-medium">{item.label}</span>
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div className="mt-auto pt-4 border-t text-sm text-gray-500">
