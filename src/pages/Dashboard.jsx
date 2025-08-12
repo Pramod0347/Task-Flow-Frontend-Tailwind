@@ -1,8 +1,10 @@
+import TaskList from "../components/tasks/TaskList";
+
 const Dashboard = () => {
     return (
         <div>
-            <h2 className="text-h3">Dashboard</h2>
-            <p className="text-body mt-2">Welcome to TaskFlow.</p>
+            <h2 className="text-h3 mb-4">Dashboard</h2>
+            <TaskList />
         </div>
     );
 }
