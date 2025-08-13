@@ -1,11 +1,23 @@
+// src/components/tasks/TaskList.jsx
 import { useState, useEffect, useCallback } from "react";
-import { getTasks } from "../../services/taskService";
+import { getTasks, deleteTask, updateTask } from "../../services/taskService";
+import TaskForm from "./TaskForm";
+import Modal from "../ui/Modal";
+import StatusChip from "../ui/StatusChip";
+import { useToast } from "../../context/ToastContext";
 
-const TaskList = () => {
+
+const TaskList = ({ refreshKey }) => {
+    // ---------- state ----------
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
+    const [editingTask, setEditingTask] = useState(null); // null = not editing
+    const { push } = useToast();
 
+
+    // ---------- data fetcher (stable function) ----------
     const fetchTasks = useCallback(async () => {
         try {
             setLoading(true);
@@ -19,10 +31,36 @@ const TaskList = () => {
         }
     }, []);
 
+    // Run on mount + whenever parent bumps refreshKey
     useEffect(() => {
         fetchTasks();
-    }, [fetchTasks]);
+    }, [fetchTasks, refreshKey]);
 
+    // ---------- actions ----------
+    const handleDelete = async (id) => {
+        const ok = window.confirm("Delete this task?");
+        if (!ok) return;
+
+        try {
+            setDeletingId(id);
+            await deleteTask(id);
+            // If you were editing this same task, close the modal
+            if (editingTask && (editingTask._id || editingTask.id) === id) {
+                setEditingTask(null);
+            }
+            push("Task Deleted", "success");
+            await fetchTasks();
+        } catch (err) {
+            alert(err.message || "Failed to delete task");
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const startEdit = (task) => setEditingTask(task);
+    const closeEdit = () => setEditingTask(null);
+
+    // ---------- tiny presentational sub-components ----------
     const EmptyState = () => (
         <div className="text-center py-10">
             <p className="text-body text-gray-600">No tasks yet.</p>
@@ -54,6 +92,7 @@ const TaskList = () => {
         </div>
     );
 
+    // ---------- render ----------
     return (
         <section className="max-w-3xl">
             {/* Header row with Refresh */}
@@ -77,30 +116,70 @@ const TaskList = () => {
                 <EmptyState />
             ) : (
                 <ul className="space-y-2">
-                    {tasks.map((t) => (
-                        <li
-                            key={t._id || t.id}
-                            className="p-3 border rounded-lg hover:bg-gray-50 transition"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-body font-medium">{t.title || t.name || "Untitled Task"}</p>
-                                    {t.description && (
-                                        <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
-                                            {t.description}
-                                        </p>
-                                    )}
+                    {tasks.map((t) => {
+                        const id = t._id || t.id; // Mongo uses _id; keep an alias for safety
+                        return (
+                            <li key={id} className="p-3 border rounded-lg hover:bg-gray-50 transition">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-body font-medium">{t.title || t.name || "Untitled Task"}</p>
+                                        {t.description && (
+                                            <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+                                                {t.description}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        <StatusChip value={t.status || "Open"} />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => startEdit(t)}
+                                            className="text-xs rounded-lg border px-2 py-1 hover:bg-gray-50"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDelete(id)}
+                                            disabled={deletingId === id}
+                                            aria-label="Delete task"
+                                            className="text-xs rounded-lg border px-2 py-1 hover:bg-gray-50 disabled:opacity-60"
+                                        >
+                                            {deletingId === id ? "Deleting…" : "Delete"}
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                    {t.status || "open"}
-                                </div>
-                            </div>
-                        </li>
-                    ))}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
+
+            {/* Edit Modal */}
+            <Modal isOpen={!!editingTask} onClose={closeEdit} title="Edit Task">
+                {editingTask && (
+                    <TaskForm
+                        key={editingTask._id || editingTask.id} // remount when switching tasks
+                        initialValues={{
+                            id: editingTask._id || editingTask.id,
+                            title: editingTask.title || editingTask.name || "",
+                            description: editingTask.description || "",
+                            status: editingTask.status || "open",
+                        }}
+                        submitLabel="Update Task"
+                        onSubmit={(payload) => updateTask(editingTask._id || editingTask.id, payload)}
+                        onSuccess={async () => {
+                            closeEdit();
+                            await fetchTasks();
+                        }}
+                    />
+                )}
+            </Modal>
         </section>
-    )
-}
+    );
+};
 
 export default TaskList;

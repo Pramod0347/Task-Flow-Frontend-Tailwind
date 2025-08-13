@@ -5,7 +5,7 @@ import {
   HiOutlineCalendar,
   HiOutlineCog,
 } from "react-icons/hi";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: HiOutlineHome, path: "/" },
